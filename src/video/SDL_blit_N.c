@@ -647,6 +647,11 @@ Blit32to32KeyAltivec(SDL_BlitInfo * info)
     ((unsigned int *) (char *) &vrgbmask)[0] = rgbmask;
     vrgbmask = vec_splat(vrgbmask, 0);
 
+#if defined(__powerpc__) && (SDL_BYTEORDER == SDL_LIL_ENDIAN)
+    /* reorder bytes for PowerPC little endian */
+    vpermute = reorder_ppc64le_vec(vpermute);
+#endif
+
     while (height--) {
 #define ONE_PIXEL_BLEND(condition, widthvar) \
         if (copy_alpha) { \
@@ -696,10 +701,6 @@ Blit32to32KeyAltivec(SDL_BlitInfo * info)
                 /* vsel is set for items that match the key */
                 vsel = (vector unsigned char) vec_and(vs, vrgbmask);
                 vsel = (vector unsigned char) vec_cmpeq(vs, vckey);
-#if defined(__powerpc__) && (SDL_BYTEORDER == SDL_LIL_ENDIAN)
-                /* reorder bytes for PowerPC little endian */
-                vpermute = reorder_ppc64le_vec(vpermute);
-#endif
                 /* permute the src vec to the dest format */
                 vs = vec_perm(vs, valpha, vpermute);
                 /* load the destination vec */
@@ -748,6 +749,11 @@ ConvertAltivec32to32_noprefetch(SDL_BlitInfo * info)
     SDL_assert(srcfmt->BytesPerPixel == 4);
     SDL_assert(dstfmt->BytesPerPixel == 4);
 
+#if defined(__powerpc__) && (SDL_BYTEORDER == SDL_LIL_ENDIAN)
+    /* reorder bytes for PowerPC little endian */
+    vpermute = reorder_ppc64le_vec(vpermute);
+#endif
+
     while (height--) {
         vector unsigned char valigner;
         vector unsigned int vbits;
@@ -779,10 +785,6 @@ ConvertAltivec32to32_noprefetch(SDL_BlitInfo * info)
             src += 4;
             width -= 4;
             vbits = vec_perm(vbits, voverflow, valigner);       /* src is ready. */
-#if defined(__powerpc__) && (SDL_BYTEORDER == SDL_LIL_ENDIAN)
-            /* reorder bytes for PowerPC little endian */
-            vpermute = reorder_ppc64le_vec(vpermute);
-#endif
             vbits = vec_perm(vbits, vzero, vpermute);   /* swizzle it. */
             vec_st(vbits, 0, dst);      /* store it back out. */
             dst += 4;
@@ -835,6 +837,11 @@ ConvertAltivec32to32_prefetch(SDL_BlitInfo * info)
     SDL_assert(srcfmt->BytesPerPixel == 4);
     SDL_assert(dstfmt->BytesPerPixel == 4);
 
+#if defined(__powerpc__) && (SDL_BYTEORDER == SDL_LIL_ENDIAN)
+    /* reorder bytes for PowerPC little endian */
+    vpermute = reorder_ppc64le_vec(vpermute);
+#endif
+
     while (height--) {
         vector unsigned char valigner;
         vector unsigned int vbits;
@@ -874,10 +881,6 @@ ConvertAltivec32to32_prefetch(SDL_BlitInfo * info)
             src += 4;
             width -= 4;
             vbits = vec_perm(vbits, voverflow, valigner);       /* src is ready. */
-#if defined(__powerpc__) && (SDL_BYTEORDER == SDL_LIL_ENDIAN)
-            /* reorder bytes for PowerPC little endian */
-            vpermute = reorder_ppc64le_vec(vpermute);
-#endif
             vbits = vec_perm(vbits, vzero, vpermute);   /* swizzle it. */
             vec_st(vbits, 0, dst);      /* store it back out. */
             dst += 4;
